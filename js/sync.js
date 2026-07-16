@@ -13,7 +13,7 @@ const SP_CONFIG = {
 
   sitePath: "/sites/corporate/oakgrove",
 
-  listName: "OGG_Dashboard_Data",
+  listName: "OGG Dashboard V1",
 
   syncIntervalMs: 20000
 };
