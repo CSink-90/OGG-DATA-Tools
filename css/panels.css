@@ -1,0 +1,282 @@
+/* ---------- Sync / status bar ---------- */
+#statusBar{
+  width:100%;
+  max-width:1740px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  background:var(--ink);
+  color:#fff;
+  font-size:10.5px;
+  letter-spacing:.04em;
+  padding:6px 14px;
+  margin-top:10px;
+}
+#statusBar .sb-left{ display:flex; align-items:center; gap:8px; }
+#statusBar .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+#statusBar .dot.local{ background:#888; }
+#statusBar .dot.connected{ background:var(--active); }
+#statusBar .dot.error{ background:var(--inactive); }
+#statusBar button{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  background:#fff;
+  color:var(--ink);
+  border:1px solid #555;
+  padding:5px 10px;
+  cursor:pointer;
+}
+#statusBar button:hover{ background:#ddd; }
+
+/* ---------- Static System Notes banner ---------- */
+#systemNotesBanner{
+  width:100%;
+  max-width:1740px;
+  background:#0e1013;
+  border:2px solid var(--line);
+  margin-top:10px;
+  padding:12px 16px;
+}
+#systemNotesBanner .sn-title{
+  color:#ffb347;
+  font-weight:bold;
+  font-size:15px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+#systemNotesBanner textarea{
+  width:100%;
+  min-height:56px;
+  background:#161a1f;
+  color:#f4f1ea;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:bold;
+  line-height:1.5;
+  border:1px solid #333;
+  padding:8px 10px;
+  resize:vertical;
+}
+
+/* ---------- Toolbar / legend ---------- */
+.toolbar{
+  display:flex; gap:10px; margin:14px 0 10px; flex-wrap:wrap; justify-content:center;
+}
+.toolbar button{
+  font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  background:var(--panel); border:1px solid var(--line); padding:7px 14px; cursor:pointer; color:var(--ink);
+}
+.toolbar button:hover{ background:var(--ink); color:#fff; }
+.status-count{ font-size:11px; color:#555; align-self:center; letter-spacing:.04em; }
+.legend{
+  display:flex; gap:18px; align-items:center; justify-content:center; flex-wrap:wrap;
+  margin-bottom:14px; font-size:11px; letter-spacing:.04em;
+}
+.legend .item{ display:flex; align-items:center; gap:6px; }
+.legend .swatch{ width:13px; height:13px; border-radius:50%; border:1.5px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.4); display:inline-block; }
+.legend .swatch.active{ background:var(--active); }
+.legend .swatch.inactive{ background:var(--inactive); }
+.legend .swatch.maint{ background:var(--maint); }
+
+/* ---------- Ops row: technicians | grid | issues ---------- */
+.ops-row{
+  width:100%; max-width:1740px;
+  display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; justify-content:center;
+}
+.side-col{ width:250px; flex:0 0 250px; display:flex; flex-direction:column; gap:12px; }
+.center-col{ flex:1 1 640px; min-width:340px; }
+
+/* ---------- Health card ---------- */
+.health-card{ background:var(--panel); border:1.5px solid var(--line); padding:10px 12px; }
+.health-card .hc-title{ font-size:10.5px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+.health-card .hc-row{ display:flex; justify-content:space-between; font-size:11.5px; padding:2px 0; }
+.health-card .hc-row .n{ font-weight:bold; }
+.health-card .hc-row.active .n{ color:var(--active-glow); }
+.health-card .hc-row.inactive .n{ color:var(--inactive-glow); }
+.health-card .hc-row.maint .n{ color:var(--maint-glow); }
+.health-card .hc-bar{ height:8px; background:#eee; margin:8px 0 2px; display:flex; overflow:hidden; border:1px solid var(--hair); }
+.health-card .hc-bar span{ height:100%; display:block; }
+
+/* ---------- Technician panel ---------- */
+.tech-panel{ background:var(--panel); border:1.5px solid var(--line); padding:10px 12px; }
+.tech-panel .tp-title{ font-size:10.5px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+.tech-row{ display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+.tech-row input[type="text"]{
+  flex:1; font-family:inherit; font-size:11px; padding:5px 6px; border:1px solid var(--hair);
+}
+.tech-row .tstatus{
+  font-size:9px; text-transform:uppercase; letter-spacing:.03em; padding:5px 6px; border:1px solid var(--line);
+  background:#fff; cursor:pointer; white-space:nowrap;
+}
+.tech-row .tstatus.active{ background:var(--active); border-color:var(--active-glow); color:#fff; }
+.tech-row .tstatus.idle{ background:#ddd; color:#555; }
+.tech-row .tdel{ background:none; border:none; color:#b5b0a3; cursor:pointer; font-size:13px; padding:2px 4px; }
+.tech-row .tdel:hover{ color:var(--inactive-glow); }
+.tech-panel .addtech{
+  margin-top:4px; width:100%; font-size:10px; text-transform:uppercase; letter-spacing:.05em;
+  padding:6px; border:1px solid var(--line); background:#fff; cursor:pointer;
+}
+.tech-panel .addtech:hover{ background:var(--ink); color:#fff; }
+
+/* ---------- Active issues panel ---------- */
+.issues-panel{ background:var(--panel); border:1.5px solid var(--line); padding:10px 12px; max-height:260px; overflow-y:auto; }
+.issues-panel .ip-title{ font-size:10.5px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+.issue-item{ border-bottom:1px solid var(--hair); padding:6px 0; cursor:pointer; }
+.issue-item:hover{ background:#f4f2ec; }
+.issue-item .ii-id{ font-weight:bold; font-size:11.5px; }
+.issue-item .ii-status{ font-size:9px; text-transform:uppercase; letter-spacing:.04em; padding:1px 5px; margin-left:6px; color:#fff; }
+.issue-item .ii-status.active{ background:var(--active-glow); }
+.issue-item .ii-status.inactive{ background:var(--inactive-glow); }
+.issue-item .ii-status.maintenance{ background:var(--maint-glow); }
+.issue-item .ii-tech{ font-size:10px; color:#555; margin-top:2px; }
+.issue-item .ii-note{ font-size:10.5px; margin-top:2px; line-height:1.35; }
+.issue-item .ii-empty{ font-size:11px; color:#888; padding:6px 0; }
+
+/* ---------- Activity feed ---------- */
+.activity-panel{ background:var(--panel); border:1.5px solid var(--line); padding:10px 12px; max-height:260px; overflow-y:auto; }
+.activity-panel .ap-title{ font-size:10.5px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+.activity-item{ font-size:10.5px; line-height:1.4; padding:5px 0; border-bottom:1px solid var(--hair); }
+.activity-item .at-time{ color:#888; font-size:9px; display:block; }
+.activity-item .at-empty{ font-size:11px; color:#888; }
+
+/* ---------- Sheet / grid ---------- */
+.sheet-wrap{ position:relative; background:var(--paper); border:2.5px solid var(--line); padding:8px; width:100%; }
+.sheet-inner{ border:1px solid var(--line); position:relative; }
+svg{ display:block; width:100%; height:auto; }
+.pdu-dot{ cursor:pointer; transition:r .12s ease; }
+.pdu-dot:hover{ r:11; }
+.pdu-label{ font-family:'Courier New',monospace; pointer-events:none; user-select:none; paint-order:stroke; stroke:#0a0c0e; stroke-width:2.5px; fill:#fff; }
+.pdu-flag{ pointer-events:none; }
+
+/* ---------- Ticker strip ---------- */
+.ticker-wrap{ display:flex; align-items:center; background:#0a0a0a; border:1px solid var(--line); border-top:none; width:100%; overflow:hidden; height:30px; }
+.ticker-label{ flex:0 0 auto; background:#c0392b; color:#fff; font-size:9.5px; font-weight:bold; letter-spacing:.06em; padding:0 10px; height:100%; display:flex; align-items:center; white-space:nowrap; }
+.ticker-track{ flex:1 1 auto; overflow:hidden; position:relative; height:100%; display:flex; align-items:center; cursor:text; }
+.ticker-scroll{ display:inline-flex; white-space:nowrap; animation:ticker-scroll 22s linear infinite; padding-left:100%; }
+.ticker-scroll span{ color:#ff5a3c; font-family:'Courier New',monospace; font-size:13px; font-weight:bold; letter-spacing:.05em; padding-right:60px; text-shadow:0 0 6px rgba(255,90,60,.6); }
+@keyframes ticker-scroll{ 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+.ticker-track input{ width:100%; background:#111; color:#ff5a3c; border:none; font-family:'Courier New',monospace; font-size:12px; font-weight:bold; letter-spacing:.05em; padding:0 10px; height:100%; }
+.ticker-edit{ flex:0 0 auto; background:#1c1c1c; color:#ccc; border:none; border-left:1px solid #333; width:30px; height:100%; cursor:pointer; font-size:12px; }
+.ticker-edit:hover{ background:#2a2a2a; color:#fff; }
+
+/* ---------- Tooltip ---------- */
+#tooltip{ position:fixed; display:none; background:var(--ink); color:#fff; font-family:'Courier New',monospace; font-size:11px; padding:8px 10px; max-width:240px; line-height:1.4; z-index:50; pointer-events:none; box-shadow:0 3px 10px rgba(0,0,0,.25); }
+#tooltip .tt-id{ font-weight:bold; letter-spacing:.05em; display:block; margin-bottom:3px; color:#f4e8c1; }
+#tooltip .tt-status{ display:inline-block; font-weight:bold; letter-spacing:.05em; margin-bottom:4px; }
+
+/* ---------- PDU edit panel ---------- */
+#editPanel{ position:fixed; display:none; background:var(--panel); border:1.5px solid var(--line); box-shadow:0 6px 20px rgba(0,0,0,.3); padding:14px; width:300px; max-height:88vh; overflow-y:auto; z-index:100; font-family:'Courier New',monospace; }
+#editPanel .ep-title{ font-weight:bold; font-size:12px; letter-spacing:.06em; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+#editPanel .ep-close{ cursor:pointer; font-size:14px; color:#888; }
+#editPanel .ep-close:hover{ color:var(--ink); }
+#editPanel .ep-label{ font-size:10px; letter-spacing:.05em; color:#555; margin-bottom:5px; text-transform:uppercase; }
+#editPanel .ep-status-row{ display:flex; gap:6px; margin-bottom:10px; }
+#editPanel .ep-status-btn{ flex:1; font-size:9.5px; text-transform:uppercase; letter-spacing:.03em; padding:7px 2px; border:1.5px solid var(--line); background:#fff; cursor:pointer; color:var(--ink); text-align:center; }
+#editPanel .ep-status-btn.sel-active{ background:var(--active); border-color:var(--active-glow); color:#fff; }
+#editPanel .ep-status-btn.sel-inactive{ background:var(--inactive); border-color:var(--inactive-glow); color:#fff; }
+#editPanel .ep-status-btn.sel-maint{ background:var(--maint); border-color:var(--maint-glow); color:#fff; }
+#editPanel .ep-radial{ display:flex; flex-direction:column; gap:3px; margin-bottom:10px; max-height:110px; overflow-y:auto; border:1px solid var(--hair); padding:6px; }
+#editPanel .ep-radial label{ font-size:11px; display:flex; align-items:center; gap:6px; }
+#editPanel .ep-radial .ep-none{ font-size:10.5px; color:#888; }
+#editPanel textarea{ width:100%; height:70px; font-family:inherit; font-size:12px; padding:6px; border:1px solid var(--hair); resize:vertical; margin-bottom:10px; }
+#editPanel .ep-attach{ margin-bottom:10px; }
+#editPanel .ep-attach input[type="file"]{ font-size:10px; width:100%; }
+#editPanel .ep-attach-list{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+#editPanel .ep-attach-thumb{ position:relative; width:52px; height:52px; border:1px solid var(--hair); overflow:hidden; }
+#editPanel .ep-attach-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+#editPanel .ep-attach-thumb .ep-attach-file{ font-size:8px; padding:3px; word-break:break-all; }
+#editPanel .ep-attach-thumb .ep-attach-del{ position:absolute; top:0; right:0; background:rgba(0,0,0,.65); color:#fff; border:none; width:15px; height:15px; font-size:10px; cursor:pointer; line-height:1; }
+#editPanel .ep-buttons{ display:flex; justify-content:space-between; gap:8px; }
+#editPanel button.ep-btn{ font-size:10px; text-transform:uppercase; letter-spacing:.05em; padding:6px 10px; border:1px solid var(--line); background:var(--panel); cursor:pointer; flex:1; }
+#editPanel button.save{ background:var(--ink); color:#fff; }
+#editPanel button.save:hover{ background:#000; }
+#editPanel button.closeissue{ color:var(--inactive-glow); border-color:var(--inactive-glow); }
+#editPanel button.closeissue:hover{ background:var(--inactive-glow); color:#fff; }
+#editPanel .ep-meta{ font-size:9.5px; color:#888; margin-top:8px; border-top:1px solid var(--hair); padding-top:6px; }
+
+/* ---------- Active Notes modal (replaces "Clear All") ---------- */
+#activeModal{ position:fixed; display:none; inset:0; background:rgba(0,0,0,.45); z-index:150; align-items:center; justify-content:center; }
+#activeModal .am-box{ background:var(--panel); border:1.5px solid var(--line); width:520px; max-width:92vw; max-height:80vh; display:flex; flex-direction:column; }
+#activeModal .am-head{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:var(--ink); color:#fff; }
+#activeModal .am-head span.t{ font-size:12px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; }
+#activeModal .am-close{ cursor:pointer; font-size:16px; }
+#activeModal .am-body{ padding:10px 14px; overflow-y:auto; }
+
+/* ---------- Inventory panel ---------- */
+#invPanel{ position:fixed; right:16px; bottom:16px; width:400px; max-width:calc(100vw - 32px); background:var(--paper); border:1.5px solid var(--line); box-shadow:0 6px 20px rgba(0,0,0,.3); font-family:'Courier New',monospace; z-index:80; }
+#invPanel .inv-head{ display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:var(--ink); color:#fff; cursor:pointer; user-select:none; }
+#invPanel .inv-head .inv-title{ font-size:11px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; }
+#invPanel .inv-head .inv-toggle{ font-size:12px; color:#ddd; }
+#invPanel .inv-body{ padding:10px; }
+#invPanel.collapsed .inv-body{ display:none; }
+#invPanel table{ width:100%; border-collapse:collapse; font-size:11px; table-layout:fixed; }
+#invPanel thead th{ text-align:left; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:#555; padding:0 4px 4px; border-bottom:1.5px solid var(--line); }
+#invPanel thead th.col-qty{ width:44px; }
+#invPanel thead th.col-del{ width:20px; }
+#invPanel tbody td{ padding:2px; vertical-align:top; border-bottom:1px solid var(--hair); }
+#invPanel tbody input[type="text"], #invPanel tbody input[type="number"]{ width:100%; font-family:inherit; font-size:11px; padding:4px 5px; border:1px solid transparent; background:transparent; color:var(--ink); }
+#invPanel tbody input:focus{ border:1px solid var(--hair); background:#fff; outline:none; }
+#invPanel tbody input[type="number"]{ text-align:center; padding:4px 2px; }
+#invPanel .inv-rowdel{ background:none; border:none; color:#b5b0a3; cursor:pointer; font-size:13px; line-height:1; padding:4px; }
+#invPanel .inv-rowdel:hover{ color:var(--inactive-glow); }
+#invPanel .inv-addrow{ margin-top:8px; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; padding:6px 10px; border:1px solid var(--line); background:#fff; cursor:pointer; color:var(--ink); }
+#invPanel .inv-addrow:hover{ background:var(--ink); color:#fff; }
+#invPanel .inv-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:9.5px; color:#888; letter-spacing:.03em; }
+#invPanel .inv-saved{ color:#2f7a4f; opacity:0; transition:opacity .4s ease; }
+#invPanel .inv-saved.show{ opacity:1; }
+
+/* ---------- Floating Site & Vendor Info panel ---------- */
+#notesPanel{ position:fixed; top:90px; left:24px; width:280px; background:var(--paper); border:1.5px solid var(--line); box-shadow:0 6px 20px rgba(0,0,0,.3); font-family:'Courier New',monospace; z-index:90; }
+#notesPanel .np-head{ display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:#2b2b2b; color:#fff; cursor:grab; user-select:none; }
+#notesPanel .np-head:active{ cursor:grabbing; }
+#notesPanel .np-title{ font-size:11px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; }
+#notesPanel .np-close{ cursor:pointer; font-size:14px; color:#ddd; line-height:1; }
+#notesPanel .np-close:hover{ color:#fff; }
+#notesPanel .np-body{ padding:12px; }
+#notesPanel.hidden{ display:none; }
+#notesPanel .np-field{ margin-bottom:9px; }
+#notesPanel .np-field label{ display:block; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:#555; margin-bottom:3px; }
+#notesPanel .np-field input[type="text"], #notesPanel .np-field input[type="password"], #notesPanel .np-field textarea{ width:100%; font-family:inherit; font-size:11.5px; padding:6px 7px; border:1px solid var(--hair); color:var(--ink); }
+#notesPanel .np-field textarea{ height:52px; resize:vertical; }
+#notesPanel .np-pwrow{ display:flex; gap:6px; }
+#notesPanel .np-pwrow input{ flex:1; }
+#notesPanel .np-pwtoggle{ flex:0 0 auto; font-size:9.5px; text-transform:uppercase; padding:0 8px; border:1px solid var(--line); background:#fff; cursor:pointer; color:var(--ink); }
+#notesPanel .np-warning{ font-size:9px; color:#a15c00; line-height:1.4; margin-top:2px; margin-bottom:8px; }
+#notesToggleBtn.active{ background:var(--ink); color:#fff; }
+
+footer{ margin-top:16px; font-size:10px; color:#777; max-width:1000px; text-align:center; line-height:1.6; }
+
+/* ---------- General IT Tasks board ---------- */
+#tasksSection{
+  width:100%; max-width:1740px;
+  background:var(--panel);
+  border:1.5px solid var(--line);
+  padding:12px 14px;
+  margin-top:14px;
+}
+#tasksSection .ts-title{ font-size:12px; font-weight:bold; letter-spacing:.06em; text-transform:uppercase; margin-bottom:2px; }
+#tasksSection .ts-subtitle{ font-size:10px; color:#777; margin-bottom:10px; }
+#tasksTable{ width:100%; border-collapse:collapse; font-size:11.5px; }
+#tasksTable thead th{ text-align:left; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:#555; padding:0 6px 5px; border-bottom:1.5px solid var(--line); }
+#tasksTable thead th.col-status{ width:110px; }
+#tasksTable thead th.col-due{ width:120px; }
+#tasksTable thead th.col-del{ width:22px; }
+#tasksTable tbody td{ padding:4px 6px; vertical-align:top; border-bottom:1px solid var(--hair); }
+#tasksTable tbody input[type="text"], #tasksTable tbody input[type="date"], #tasksTable tbody select{
+  width:100%; font-family:inherit; font-size:11.5px; padding:5px 6px; border:1px solid transparent; background:transparent; color:var(--ink);
+}
+#tasksTable tbody input:focus, #tasksTable tbody select:focus{ border:1px solid var(--hair); background:#fff; outline:none; }
+#tasksTable tbody select{ cursor:pointer; }
+#tasksTable tbody select.status-open{ color:var(--inactive-glow); font-weight:bold; }
+#tasksTable tbody select.status-inprogress{ color:var(--maint-glow); font-weight:bold; }
+#tasksTable tbody select.status-done{ color:var(--active-glow); font-weight:bold; }
+#tasksTable .ts-rowdel{ background:none; border:none; color:#b5b0a3; cursor:pointer; font-size:13px; line-height:1; padding:4px; }
+#tasksTable .ts-rowdel:hover{ color:var(--inactive-glow); }
+.ts-addrow{ margin-top:8px; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; padding:6px 10px; border:1px solid var(--line); background:#fff; cursor:pointer; color:var(--ink); }
+.ts-addrow:hover{ background:var(--ink); color:#fff; }
+.ts-empty{ font-size:11px; color:#888; padding:8px 0; }
+

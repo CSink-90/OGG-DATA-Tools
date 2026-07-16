@@ -1,0 +1,39 @@
+:root{
+  --paper:#fbfaf7;
+  --ink:#1a1a1a;
+  --line:#2b2b2b;
+  --hair:#c9c5ba;
+  --panel:#ffffff;
+  --active:#22c55e;
+  --active-glow:#16a34a;
+  --inactive:#ef4444;
+  --inactive-glow:#b91c1c;
+  --maint:#f5a623;
+  --maint-glow:#c9820f;
+  --info:#3b82f6;
+  --bg:#e9e6de;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:'Courier New','Consolas',monospace;
+  color:var(--ink);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:0 12px 60px;
+}
+h1{
+  font-size:15px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin:14px 0 4px;
+}
+.subhead{
+  font-size:11px;
+  color:#555;
+  margin:0 0 14px;
+  letter-spacing:.04em;
+}
+button{ font-family:inherit; }

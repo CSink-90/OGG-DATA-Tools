@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGG PDU Dashboard v2.0</title>
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/panels.css">
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+</head>
+<body>
+
+<div id="statusBar">
+  <div class="sb-left"><span class="dot local" id="sbDot"></span><span id="sbLabel">Local-only mode</span></div>
+  <div class="sb-right">
+    <button id="sbRefresh" style="display:none;">Refresh Now</button>
+    <button id="sbSignIn">Sign in with Microsoft 365</button>
+  </div>
+</div>
+
+<div id="systemNotesBanner">
+  <div class="sn-title">OGG Ticker Above Video Wall — System Notes</div>
+  <textarea id="systemNotesText" placeholder="All information regarding the OGG Ticker for iCandy goes here — large, static, easy to read from across the room."></textarea>
+</div>
+
+<h1>OGG Operations Dashboard — IT Department Work &amp; Task Tracking</h1>
+<p class="subhead">Video Wall PDU Layout — Drawing No. OGG-PDU-001 — Rev 5 — Grid 11×5 = 55 PDUs — NTS — Shared with the whole team</p>
+
+<div class="toolbar">
+  <button id="exportJsonBtn">Export JSON</button>
+  <button id="exportCsvBtn">Export CSV</button>
+  <button id="importBtn">Import JSON</button>
+  <input type="file" id="importFile" accept=".json" style="display:none">
+  <button id="viewActiveBtn">View Active Notes</button>
+  <button id="notesToggleBtn">Site &amp; Vendor Info</button>
+  <span class="status-count" id="statusCount">0 of 55 PDUs have active notes</span>
+</div>
+
+<div class="legend">
+  <span class="item"><span class="swatch active"></span>Active</span>
+  <span class="item"><span class="swatch inactive"></span>Inactive / Broken</span>
+  <span class="item"><span class="swatch maint"></span>Requires Maintenance</span>
+  <span class="item">🚩 = PDU has a note</span>
+</div>
+
+<div class="ops-row">
+  <div class="side-col">
+    <div class="tech-panel">
+      <div class="tp-title">Technicians</div>
+      <div id="techList"></div>
+      <button type="button" class="addtech" id="addTechBtn">+ Add Technician</button>
+    </div>
+    <div class="health-card" id="healthCard"></div>
+  </div>
+
+  <div class="center-col">
+    <div class="sheet-wrap">
+      <div class="sheet-inner" id="sheetInner"></div>
+    </div>
+    <div class="ticker-wrap">
+      <div class="ticker-label">TICKER / BRANDING STRIP</div>
+      <div class="ticker-track" id="tickerTrack">
+        <div class="ticker-scroll" id="tickerScroll"><span id="tickerSpan1"></span><span id="tickerSpan2"></span></div>
+      </div>
+      <button type="button" class="ticker-edit" id="tickerEditBtn" title="Edit ticker text">&#9998;</button>
+    </div>
+  </div>
+
+  <div class="side-col">
+    <div class="issues-panel">
+      <div class="ip-title">Active Issues</div>
+      <div id="issuesList"></div>
+    </div>
+    <div class="activity-panel">
+      <div class="ap-title">Activity Feed</div>
+      <div id="activityList"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Click any PDU marker to set its status, assign technicians, attach a photo, and add a note. A note must be verified with a technician's name from the radial before it can be closed.<br>
+  When connected to Microsoft 365 / SharePoint, changes sync to the whole team automatically. See SETUP.md for connecting your team.
+</footer>
+
+<div id="tasksSection">
+  <div class="ts-title">IT Department Tasks</div>
+  <div class="ts-subtitle">General work items — not tied to a specific PDU. Everyone on the team sees the same list.</div>
+  <table id="tasksTable">
+    <thead>
+      <tr>
+        <th class="col-title">Task</th>
+        <th class="col-assigned">Assigned To</th>
+        <th class="col-status">Status</th>
+        <th class="col-due">Due Date</th>
+        <th class="col-notes">Notes</th>
+        <th class="col-del"></th>
+      </tr>
+    </thead>
+    <tbody id="tasksTbody"></tbody>
+  </table>
+  <button type="button" class="ts-addrow" id="tasksAddRow">+ Add Task</button>
+</div>
+
+<div id="tooltip"></div>
+
+<div id="editPanel">
+  <div class="ep-title"><span id="epId">PDU-01</span><span class="ep-close" id="epClose">&times;</span></div>
+
+  <div class="ep-label">Status</div>
+  <div class="ep-status-row">
+    <button type="button" class="ep-status-btn" id="epStatus_active">Active</button>
+    <button type="button" class="ep-status-btn" id="epStatus_inactive">Inactive</button>
+    <button type="button" class="ep-status-btn" id="epStatus_maintenance">Maint.</button>
+  </div>
+
+  <div class="ep-label">Working This Issue (Technician Radial)</div>
+  <div class="ep-radial" id="epRadial"></div>
+
+  <div class="ep-label">Notes</div>
+  <textarea id="epTextarea" placeholder="Describe the issue..."></textarea>
+
+  <div class="ep-attach">
+    <div class="ep-label">Attachments (photos, small files)</div>
+    <input type="file" id="epFile" multiple accept="image/*,.pdf,.txt">
+    <div class="ep-attach-list" id="epAttachList"></div>
+  </div>
+
+  <div class="ep-buttons">
+    <button class="ep-btn closeissue" id="epCloseIssue">Close Issue</button>
+    <button class="ep-btn save" id="epSave">Save</button>
+  </div>
+  <div class="ep-meta" id="epMeta"></div>
+</div>
+
+<div id="activeModal">
+  <div class="am-box">
+    <div class="am-head"><span class="t">Active Notes</span><span class="am-close" id="amClose">&times;</span></div>
+    <div class="am-body" id="amBody"></div>
+  </div>
+</div>
+
+<div id="invPanel">
+  <div class="inv-head" id="invHead">
+    <span class="inv-title">Equipment Inventory / Legend</span>
+    <span class="inv-toggle" id="invToggle">&#9660;</span>
+  </div>
+  <div class="inv-body">
+    <table id="invTable">
+      <thead><tr><th class="col-part">Part Name</th><th class="col-qty">Qty</th><th class="col-notes">Notes</th><th class="col-del"></th></tr></thead>
+      <tbody id="invTbody"></tbody>
+    </table>
+    <button type="button" class="inv-addrow" id="invAddRow">+ Add Item</button>
+    <div class="inv-foot"><span>Synced with team when connected</span><span class="inv-saved" id="invSaved">Saved</span></div>
+  </div>
+</div>
+
+<div id="notesPanel" class="hidden">
+  <div class="np-head" id="notesHead"><span class="np-title">Site &amp; Vendor Info</span><span class="np-close" id="notesClose">&times;</span></div>
+  <div class="np-body">
+    <div class="np-field"><label for="npLocation">Location</label><input type="text" id="npLocation" placeholder="e.g. OGG Terminal, Rack Room 2"></div>
+    <div class="np-field"><label for="npServer">Server Info</label><textarea id="npServer" placeholder="Host / IP / controller / software version..."></textarea></div>
+    <div class="np-field"><label for="npUser">User Name</label><input type="text" id="npUser" placeholder="login username" autocomplete="off"></div>
+    <div class="np-field">
+      <label for="npPass">Password</label>
+      <div class="np-pwrow"><input type="password" id="npPass" placeholder="login password" autocomplete="off"><button type="button" class="np-pwtoggle" id="npPassToggle">Show</button></div>
+      <div class="np-warning">Stored locally in this browser only, unencrypted, and never synced to SharePoint — avoid on shared/public computers.</div>
+    </div>
+    <div class="np-field"><label for="npVendor">Vendor / Replacement Contact</label><textarea id="npVendor" placeholder="Company, contact name, phone/email for ordering replacement parts..."></textarea></div>
+    <div class="inv-foot"><span>Local to this browser only</span><span class="inv-saved" id="npSaved">Saved</span></div>
+  </div>
+</div>
+
+<script src="js/sync.js"></script>
+<script src="js/pdu.js"></script>
+<script src="js/ops.js"></script>
+<script src="js/extras.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
