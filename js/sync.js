@@ -4,11 +4,17 @@
    ========================================================================= */
 const SP_CONFIG = {
   enabled: true,
-  tenantId: "YOUR_TENANT_ID",
-  clientId: "YOUR_CLIENT_ID",
-  siteHostname: "yourtenant.sharepoint.com",
-  sitePath: "/sites/OGGOperations",
+
+  tenantId: "11249f19-556c-4ca5-b24d-8fdf987f4162",
+
+  clientId: "6dfd3611-4766-4943-8bc5-93334b56e0ca",
+
+  siteHostname: "chdn.sharepoint.com",
+
+  sitePath: "/sites/corporate/oakgrove",
+
   listName: "OGG_Dashboard_Data",
+
   syncIntervalMs: 20000
 };
 
