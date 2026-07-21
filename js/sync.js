@@ -1,28 +1,24 @@
 /* =========================================================================
-   SP_CONFIG — fill these in per the SETUP.md guide.
+   FIREBASE_CONFIG — fill these in per docs/SETUP.md.
    Set enabled:false to force local-only/offline mode.
+
+   Get these values from: Firebase Console → Project settings → General →
+   "Your apps" → Web app → SDK setup and configuration.
    ========================================================================= */
-const SP_CONFIG = {
+const FIREBASE_CONFIG = {
   enabled: true,
-
-  tenantId: "11249f19-556c-4ca5-b24d-8fdf987f4162",
-
-  clientId: "6dfd3611-4766-4943-8bc5-93334b56e0ca",
-
-  siteHostname: "chdn.sharepoint.com",
-
-  sitePath: "/sites/corporate/oakgrove",
-
-  listName: "OGG Dashboard V1",
-
-  syncIntervalMs: 20000
+  apiKey: "AIzaSyAP2Zh04uQQpWnXUa8hFhP23-tMPsGwMrg",
+  authDomain: "ogg-pdu-dashboard-v2.firebaseapp.com",
+  databaseURL: "https://ogg-pdu-dashboard-v2-default-rtdb.firebaseio.com",
+  projectId: "ogg-pdu-dashboard-v2",
+  rootPath: "ogg-dashboard"   // top-level key in the Realtime Database — no need to change this
 };
 
 /* =========================================================================
-   Central app state. One JSON blob per "domain" is stored as a row
-   (Title = domain key, Payload = JSON) in the SP_CONFIG.listName list.
-   Locally, the whole thing is mirrored to localStorage as a fallback and
-   as an offline cache.
+   Central app state. Each top-level key below is synced as its own node
+   under FIREBASE_CONFIG.rootPath in the Realtime Database, live, in both
+   directions. Locally, the whole thing is also mirrored to localStorage as
+   an offline cache / fallback when Firebase isn't configured.
    ========================================================================= */
 const STATE = {
   pdu: {},          // { "PDU-01": {status,note,workingTechs:[],attachments:[],updatedBy,updatedAt} }
@@ -34,7 +30,7 @@ const STATE = {
   activity: []      // [{ts,who,action,target,detail}]
 };
 
-const CONN = { mode: 'local', account: null, lastSync: null, siteId: null, listId: null, error: null };
+const CONN = { mode: 'local', lastSync: null, error: null };
 
 const LOCAL_STATE_KEY = 'ogg_dashboard_state_v1';
 
@@ -57,170 +53,78 @@ function logActivity(who, action, target, detail){
 }
 
 /* Call after changing STATE.<domain> to persist locally and, if connected,
-   push that one domain to SharePoint. Always also pushes 'activity'. */
+   push that one domain to Firebase live. Also always pushes 'activity'. */
 async function commitChange(domain){
   saveLocalState();
   if(typeof window.onStateChanged === 'function') window.onStateChanged(domain);
-  if(CONN.mode === 'sharepoint'){
+  if(CONN.mode === 'firebase' && fbDb){
     try{
-      await upsertRow(domain, STATE[domain]);
-      if(domain !== 'activity') await upsertRow('activity', STATE.activity);
+      await fbDb.ref(FIREBASE_CONFIG.rootPath + '/' + domain).set(STATE[domain]);
+      if(domain !== 'activity') await fbDb.ref(FIREBASE_CONFIG.rootPath + '/activity').set(STATE.activity);
       CONN.lastSync = new Date();
       CONN.error = null;
     }catch(err){
       CONN.error = err.message;
-      console.error('SharePoint save failed:', err);
+      console.error('Firebase write failed:', err);
     }
     if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
   }
 }
 
-/* ---------------------------- MSAL / Graph ---------------------------- */
-let msalInstance = null;
-const GRAPH_SCOPES = ['Sites.ReadWrite.All'];
+/* ---------------------------- Firebase ---------------------------- */
+let fbApp = null, fbDb = null;
 
-function initMsal(){
-  if(!window.msal){ console.warn('msal-browser.js not loaded — SharePoint mode unavailable.'); return; }
-  msalInstance = new msal.PublicClientApplication({
-    auth: {
-      clientId: SP_CONFIG.clientId,
-      authority: `https://login.microsoftonline.com/${SP_CONFIG.tenantId}`,
-      redirectUri: window.location.href.split('#')[0].split('?')[0]
-    },
-    cache: { cacheLocation: 'localStorage' }
-  });
-}
-
-async function signIn(){
-  if(!msalInstance){ alert('Sign-in is unavailable — msal-browser.js failed to load.'); return; }
+function initFirebase(){
+  if(!FIREBASE_CONFIG.enabled) return;
+  if(!window.firebase){
+    console.warn('Firebase SDK failed to load — staying in local-only mode.');
+    return;
+  }
   try{
-    const result = await msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
-    msalInstance.setActiveAccount(result.account);
-    CONN.account = result.account;
-    await connectToSharePoint();
+    fbApp = firebase.initializeApp({
+      apiKey: FIREBASE_CONFIG.apiKey,
+      authDomain: FIREBASE_CONFIG.authDomain,
+      databaseURL: FIREBASE_CONFIG.databaseURL,
+      projectId: FIREBASE_CONFIG.projectId
+    });
+    fbDb = firebase.database();
   }catch(err){
-    alert('Sign-in failed: ' + err.message);
+    CONN.error = err.message;
+    if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
+    return;
   }
-}
 
-function signOut(){
-  if(!msalInstance) return;
-  const account = msalInstance.getActiveAccount();
-  CONN.mode = 'local';
-  CONN.account = null;
-  if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
-  if(account) msalInstance.logoutPopup({ account });
-}
-
-async function getToken(){
-  const account = msalInstance.getActiveAccount();
-  if(!account) throw new Error('Not signed in.');
-  try{
-    const r = await msalInstance.acquireTokenSilent({ scopes: GRAPH_SCOPES, account });
-    return r.accessToken;
-  }catch(e){
-    const r = await msalInstance.acquireTokenPopup({ scopes: GRAPH_SCOPES });
-    return r.accessToken;
-  }
-}
-
-async function graphFetch(url, options = {}){
-  const token = await getToken();
-  const res = await fetch(url, {
-    ...options,
-    headers: { ...(options.headers || {}), Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
-  });
-  if(!res.ok){
-    const t = await res.text().catch(()=> '');
-    throw new Error(`Graph ${res.status}: ${t.slice(0,200)}`);
-  }
-  return res.status === 204 ? null : res.json();
-}
-
-async function ensureSite(){
-  if(CONN.siteId) return CONN.siteId;
-  const d = await graphFetch(`https://graph.microsoft.com/v1.0/sites/${SP_CONFIG.siteHostname}:${SP_CONFIG.sitePath}`);
-  CONN.siteId = d.id;
-  return CONN.siteId;
-}
-async function ensureList(){
-  if(CONN.listId) return CONN.listId;
-  await ensureSite();
-  const d = await graphFetch(`https://graph.microsoft.com/v1.0/sites/${CONN.siteId}/lists?$filter=displayName eq '${SP_CONFIG.listName}'`);
-  if(!d.value.length) throw new Error(`List "${SP_CONFIG.listName}" not found on site. See SETUP.md Step 1.`);
-  CONN.listId = d.value[0].id;
-  return CONN.listId;
-}
-async function fetchRows(){
-  await ensureList();
-  const d = await graphFetch(`https://graph.microsoft.com/v1.0/sites/${CONN.siteId}/lists/${CONN.listId}/items?expand=fields&$top=200`);
-  return d.value;
-}
-async function upsertRow(title, payloadObj){
-  await ensureList();
-  const rows = await fetchRows();
-  const existing = rows.find(r => r.fields && r.fields.Title === title);
-  const payload = JSON.stringify(payloadObj);
-  if(existing){
-    await graphFetch(`https://graph.microsoft.com/v1.0/sites/${CONN.siteId}/lists/${CONN.listId}/items/${existing.id}/fields`, {
-      method: 'PATCH', body: JSON.stringify({ Payload: payload })
-    });
-  }else{
-    await graphFetch(`https://graph.microsoft.com/v1.0/sites/${CONN.siteId}/lists/${CONN.listId}/items`, {
-      method: 'POST', body: JSON.stringify({ fields: { Title: title, Payload: payload } })
-    });
-  }
-}
-
-async function pullAll(){
-  const rows = await fetchRows();
-  rows.forEach(r=>{
-    const key = r.fields && r.fields.Title;
-    if(!key || !(key in STATE)) return;
-    try{ STATE[key] = JSON.parse(r.fields.Payload || 'null') ?? STATE[key]; }catch(e){}
-  });
-  saveLocalState();
-  CONN.lastSync = new Date();
-}
-
-async function connectToSharePoint(){
-  try{
-    await pullAll();
-    CONN.mode = 'sharepoint';
+  firebase.auth().signInAnonymously().then(()=>{
+    attachLiveListeners();
+    CONN.mode = 'firebase';
     CONN.error = null;
-    startPolling();
-  }catch(err){
+    if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
+  }).catch(err=>{
     CONN.mode = 'local';
     CONN.error = err.message;
-    alert('Connected to Microsoft 365, but could not reach SharePoint:\n' + err.message + '\n\nCheck SP_CONFIG values and the list setup in SETUP.md. Falling back to local-only mode.');
-  }
-  if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
-  if(typeof window.onStateChanged === 'function') window.onStateChanged('all');
-}
-
-let pollTimer = null;
-function startPolling(){
-  if(pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(async ()=>{
-    if(CONN.mode !== 'sharepoint') return;
-    if(window.EDIT_PANEL_OPEN) return; // don't clobber an in-progress edit
-    try{
-      await pullAll();
-      CONN.error = null;
-    }catch(err){
-      CONN.error = err.message;
-    }
     if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
-    if(typeof window.onStateChanged === 'function') window.onStateChanged('all');
-  }, SP_CONFIG.syncIntervalMs);
+    console.error('Firebase anonymous sign-in failed:', err);
+  });
 }
 
-async function manualRefresh(){
-  if(CONN.mode !== 'sharepoint') return;
-  try{
-    await pullAll();
-    CONN.error = null;
-  }catch(err){ CONN.error = err.message; }
-  if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
-  if(typeof window.onStateChanged === 'function') window.onStateChanged('all');
+/* Live, push-based sync — no polling needed. Fires immediately with
+   current data, then again every time anyone (including this browser)
+   writes a change. */
+function attachLiveListeners(){
+  Object.keys(STATE).forEach(domain=>{
+    fbDb.ref(FIREBASE_CONFIG.rootPath + '/' + domain).on('value', (snapshot)=>{
+      const val = snapshot.val();
+      if(val !== null && val !== undefined){
+        STATE[domain] = val;
+        saveLocalState();
+        CONN.lastSync = new Date();
+        if(window.EDIT_PANEL_OPEN && domain === 'pdu') return; // don't clobber an in-progress edit
+        if(typeof window.onStateChanged === 'function') window.onStateChanged(domain);
+        if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
+      }
+    }, (err)=>{
+      CONN.error = err.message;
+      if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
+    });
+  });
 }
