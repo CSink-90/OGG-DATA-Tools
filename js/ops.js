@@ -1,56 +1,61 @@
 /* ------------------------------ Technicians ------------------------------ */
 function ensureDefaultTechnicians(){
-  if(!STATE.technicians || !STATE.technicians.length){
-    STATE.technicians = Array.from({length:6}, ()=>({ name:'', status:'active' }));
+  if(!STATE.technicians || typeof STATE.technicians !== 'object' || Array.isArray(STATE.technicians)){
+    STATE.technicians = {};
+  }
+  if(Object.keys(STATE.technicians).length === 0){
+    for(let i=0;i<6;i++){ STATE.technicians[genId()] = { name:'', status:'active' }; }
   }
 }
 
 function renderTechPanel(){
   const wrap = document.getElementById('techList');
   if(document.activeElement && wrap.contains(document.activeElement)) return; // mid-edit — skip this refresh
-  wrap.innerHTML = STATE.technicians.map((t, i)=>`
-    <div class="tech-row" data-idx="${i}">
-      <input type="text" class="tech-name" placeholder="Technician ${i+1} name" value="${(t.name||'').replace(/"/g,'&quot;')}">
-      <button type="button" class="tstatus ${t.status}" data-idx="${i}">${t.status === 'active' ? 'Active' : 'Idle'}</button>
-      <button type="button" class="tdel" data-idx="${i}" title="Remove">&times;</button>
+  const entries = Object.entries(STATE.technicians);
+  wrap.innerHTML = entries.map(([id, t])=>`
+    <div class="tech-row" data-id="${id}">
+      <input type="text" class="tech-name" placeholder="Technician name" value="${(t.name||'').replace(/"/g,'&quot;')}">
+      <button type="button" class="tstatus ${t.status}" data-id="${id}">${t.status === 'active' ? 'Active' : 'Idle'}</button>
+      <button type="button" class="tdel" data-id="${id}" title="Remove">&times;</button>
     </div>`).join('');
 
   wrap.querySelectorAll('.tech-name').forEach(inp=>{
     inp.addEventListener('input', ()=>{
-      const idx = Number(inp.closest('.tech-row').getAttribute('data-idx'));
-      STATE.technicians[idx].name = inp.value;
-      scheduleTechSave();
+      const id = inp.closest('.tech-row').getAttribute('data-id');
+      STATE.technicians[id].name = inp.value;
+      scheduleTechSave(id);
     });
   });
   wrap.querySelectorAll('.tstatus').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const idx = Number(btn.getAttribute('data-idx'));
-      STATE.technicians[idx].status = STATE.technicians[idx].status === 'active' ? 'idle' : 'active';
+      const id = btn.getAttribute('data-id');
+      STATE.technicians[id].status = STATE.technicians[id].status === 'active' ? 'idle' : 'active';
       renderTechPanel();
-      commitChange('technicians');
+      commitFieldChange('technicians', id, STATE.technicians[id]);
       renderHealthCard();
     });
   });
   wrap.querySelectorAll('.tdel').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const idx = Number(btn.getAttribute('data-idx'));
-      STATE.technicians.splice(idx, 1);
+      const id = btn.getAttribute('data-id');
+      delete STATE.technicians[id];
       renderTechPanel();
-      commitChange('technicians');
+      deleteFieldChange('technicians', id);
     });
   });
 }
-let techSaveTimer = null;
-function scheduleTechSave(){
-  clearTimeout(techSaveTimer);
-  techSaveTimer = setTimeout(()=> commitChange('technicians'), 500);
+const techSaveTimers = {};
+function scheduleTechSave(id){
+  clearTimeout(techSaveTimers[id]);
+  techSaveTimers[id] = setTimeout(()=> commitFieldChange('technicians', id, STATE.technicians[id]), 500);
 }
 
 function wireTechPanel(){
   document.getElementById('addTechBtn').addEventListener('click', ()=>{
-    STATE.technicians.push({ name:'', status:'active' });
+    const id = genId();
+    STATE.technicians[id] = { name:'', status:'active' };
     renderTechPanel();
-    commitChange('technicians');
+    commitFieldChange('technicians', id, STATE.technicians[id]);
   });
 }
 
@@ -144,7 +149,7 @@ function wireActiveModal(){
 const TASK_STATUS_LABEL = { open: 'Open', inprogress: 'In Progress', done: 'Done' };
 
 function taskRowHTML(t, idx){
-  const techs = (STATE.technicians || []).filter(x => x.name && x.name.trim());
+  const techs = Object.values(STATE.technicians || {}).filter(x => x.name && x.name.trim());
   const techOptions = ['<option value="">Unassigned</option>']
     .concat(techs.map(x => `<option value="${x.name.replace(/"/g,'&quot;')}" ${t.assignedTech===x.name?'selected':''}>${x.name}</option>`))
     .join('');
