@@ -3,10 +3,13 @@ const STATUS_LABEL = { active: 'ACTIVE', inactive: 'INACTIVE / BROKEN', maintena
 const DEFAULT_STATUS = 'active';
 const MAX_ATTACH_BYTES = 180 * 1024; // per-attachment cap so the shared JSON blob stays small
 
-const cols = ["A","B","C","D","E","F","G","H","I","J","K"];
+const GRID_COLS = 12, GRID_ROWS = 9;
+const cols = Array.from({length: GRID_COLS}, (_, i)=> String.fromCharCode(65 + i)); // A..L
 const colX = {}; cols.forEach((c,i)=> colX[c] = 50 + i*140);
-const rowY = {1:50, 2:125, 3:200, 4:275, 5:350};
-const IMG_W = 1500, IMG_H = 399;
+const rows = Array.from({length: GRID_ROWS}, (_, i)=> i + 1); // 1..9
+const rowY = {}; rows.forEach((r,i)=> rowY[r] = 50 + i*75);
+const IMG_W = 50 + (GRID_COLS - 1) * 140 + 50;   // 1640 — 50px margin each side, same column spacing as before
+const IMG_H = 50 + (GRID_ROWS - 1) * 75 + 50;    // 700 — same row spacing as before, taller for 9 rows
 const pad = 90;
 const W = IMG_W + pad*2;
 const H = IMG_H + pad*2 + 40;
@@ -16,10 +19,10 @@ const halfW = 62, halfH = 30;
 const PDU_LIST = [];
 (function buildPduList(){
   let n = 1;
-  [1,2,3,4,5].forEach(r=>{
+  rows.forEach(r=>{
     cols.forEach(c=>{
       const x = imgX + colX[c], y = imgY + rowY[r];
-      const id = "PDU-" + String(n).padStart(2,"0");
+      const id = "PDU-" + String(n).padStart(3,"0");
       PDU_LIST.push({ id, grid: c+r, x, y });
       n++;
     });
@@ -55,7 +58,7 @@ function renderGridSVG(){
   cols.forEach(c=>{
     svg.push(`<text x="${imgX + colX[c]}" y="${imgY-10}" text-anchor="middle" font-family="Courier New, monospace" font-size="13" font-weight="bold">${c}</text>`);
   });
-  [1,2,3,4,5].forEach(r=>{
+  rows.forEach(r=>{
     svg.push(`<text x="${imgX-15}" y="${imgY + rowY[r]+4}" text-anchor="middle" font-family="Courier New, monospace" font-size="13" font-weight="bold">${r}</text>`);
   });
   svg.push('</g>');
@@ -68,7 +71,7 @@ function renderGridSVG(){
     svg.push('</g>');
   });
   svg.push('</g>');
-  svg.push(`<text x="${imgX}" y="${H-15}" font-family="Courier New, monospace" font-size="9" fill="#555555">Reference: video wall screen housing only — Grid 11x5 = 55 PDUs — NTS</text>`);
+  svg.push(`<text x="${imgX}" y="${H-15}" font-family="Courier New, monospace" font-size="9" fill="#555555">Reference: video wall screen housing only — Grid ${GRID_COLS}x${GRID_ROWS} = ${PDU_LIST.length} PDUs — NTS</text>`);
   svg.push('</svg>');
   return svg.join('');
 }
@@ -83,7 +86,7 @@ function refreshDotsAndFlags(){
   });
   const count = PDU_LIST.filter(p => { const e = STATE.pdu[p.id]; return e && e.note && e.note.trim(); }).length;
   const sc = document.getElementById('statusCount');
-  if(sc) sc.textContent = `${count} of 55 PDUs have active notes`;
+  if(sc) sc.textContent = `${count} of ${PDU_LIST.length} PDUs have active notes`;
 }
 
 /* ------------------------------ Tooltip ------------------------------ */
@@ -113,7 +116,7 @@ let activeStatus = DEFAULT_STATUS;
 let pendingAttachments = [];
 
 function techRadialHTML(selected){
-  const techs = (STATE.technicians || []).filter(t => t.name && t.name.trim());
+  const techs = Object.values(STATE.technicians || {}).filter(t => t.name && t.name.trim());
   if(!techs.length) return '<div class="ep-none">No technicians yet — add names in the Technicians panel.</div>';
   return techs.map(t=>{
     const checked = selected.includes(t.name) ? 'checked' : '';
@@ -181,7 +184,7 @@ function selectedTechs(){
 
 function currentUserName(){
   const techs = selectedTechs();
-  return techs.length ? techs.join(' + ') : (CONN.account ? CONN.account.name : 'Unknown');
+  return techs.length ? techs.join(' + ') : 'Unknown';
 }
 
 async function saveEditor(){
@@ -196,7 +199,7 @@ async function saveEditor(){
   entry.updatedAt = new Date().toISOString();
   if(!prevNote && entry.note) logActivity(entry.updatedBy, 'Opened note', activeId, entry.note.slice(0,80));
   else logActivity(entry.updatedBy, 'Updated', activeId, entry.note.slice(0,80));
-  await commitChange('pdu');
+  await commitFieldChange('pdu', activeId, entry);
   refreshDotsAndFlags();
   closeEditor();
 }
@@ -215,7 +218,7 @@ async function closeIssue(){
   entry.updatedBy = techs.join(' + ');
   entry.updatedAt = new Date().toISOString();
   logActivity(entry.updatedBy, 'Closed note', activeId, '');
-  await commitChange('pdu');
+  await commitFieldChange('pdu', activeId, entry);
   refreshDotsAndFlags();
   closeEditor();
 }
