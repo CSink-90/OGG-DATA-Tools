@@ -21,7 +21,7 @@ const FIREBASE_CONFIG = {
    an offline cache / fallback when Firebase isn't configured.
    ========================================================================= */
 const STATE = {
-  pdu: {},          // { "PDU-01": {status,note,workingTechs:[],attachments:[],updatedBy,updatedAt} }
+  pdu: {},          // { "PDU-001": {status,note,workingTechs:[],attachments:[],updatedBy,updatedAt} }
   technicians: [],  // [{name,status:'active'|'idle'}]
   inventory: [],    // [{part,qty,notes}]
   tasks: [],        // [{title,assignedTech,status:'open'|'inprogress'|'done',dueDate,notes}]
@@ -42,6 +42,7 @@ function loadLocalState(){
       Object.assign(STATE, data);
     }
   }catch(e){}
+  migrateTechniciansIfNeeded();
 }
 function saveLocalState(){
   try{ localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(STATE)); }catch(e){}
@@ -69,6 +70,63 @@ async function commitChange(domain){
     }
     if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
   }
+}
+
+/* Granular write: patches ONE item inside a keyed domain (pdu, technicians)
+   instead of overwriting the whole domain. This is what stops two people's
+   concurrent edits from clobbering each other — each write only ever
+   touches its own item's path in the database. */
+async function commitFieldChange(domain, key, value){
+  saveLocalState();
+  if(typeof window.onStateChanged === 'function') window.onStateChanged(domain);
+  if(CONN.mode === 'firebase' && fbDb){
+    try{
+      await fbDb.ref(FIREBASE_CONFIG.rootPath + '/' + domain + '/' + key).set(value);
+      await fbDb.ref(FIREBASE_CONFIG.rootPath + '/activity').set(STATE.activity);
+      CONN.lastSync = new Date();
+      CONN.error = null;
+    }catch(err){
+      CONN.error = err.message;
+      console.error('Firebase write failed:', err);
+    }
+    if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
+  }
+}
+
+/* Granular delete: removes ONE item's path entirely (e.g. removing a
+   technician) without touching any sibling item. */
+async function deleteFieldChange(domain, key){
+  saveLocalState();
+  if(typeof window.onStateChanged === 'function') window.onStateChanged(domain);
+  if(CONN.mode === 'firebase' && fbDb){
+    try{
+      await fbDb.ref(FIREBASE_CONFIG.rootPath + '/' + domain + '/' + key).remove();
+      CONN.lastSync = new Date();
+      CONN.error = null;
+    }catch(err){
+      CONN.error = err.message;
+      console.error('Firebase delete failed:', err);
+    }
+    if(typeof window.onConnectionChanged === 'function') window.onConnectionChanged();
+  }
+}
+
+function genId(){
+  return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+/* One-time fix for data saved under the old array-based technicians format.
+   Firebase silently turns sequentially-keyed objects back into JS arrays on
+   read, which is the root cause of the old bug — this converts any array
+   it finds into properly ID-keyed entries, once. */
+function migrateTechniciansIfNeeded(){
+  if(Array.isArray(STATE.technicians)){
+    const obj = {};
+    STATE.technicians.forEach(t=>{ if(t) obj[genId()] = t; });
+    STATE.technicians = obj;
+    return true;
+  }
+  return false;
 }
 
 /* ---------------------------- Firebase ---------------------------- */
@@ -116,6 +174,9 @@ function attachLiveListeners(){
       const val = snapshot.val();
       if(val !== null && val !== undefined){
         STATE[domain] = val;
+        if(domain === 'technicians' && migrateTechniciansIfNeeded()){
+          fbDb.ref(FIREBASE_CONFIG.rootPath + '/technicians').set(STATE.technicians);
+        }
         saveLocalState();
         CONN.lastSync = new Date();
         if(window.EDIT_PANEL_OPEN && domain === 'pdu') return; // don't clobber an in-progress edit
