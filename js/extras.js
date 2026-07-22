@@ -77,7 +77,7 @@ function wireSystemNotesBanner(){
 }
 
 /* ------------------------------ Ticker strip ------------------------------ */
-const TICKER_DEFAULT = 'OGG VIDEO WALL — SCREEN HOUSING — 55 PDU REFERENCE GRID — CLICK THE ICON TO EDIT —';
+const TICKER_DEFAULT = 'OGG VIDEO WALL — SCREEN HOUSING — 108 PDU REFERENCE GRID — CLICK THE ICON TO EDIT —';
 function tickerRender(){
   const s1 = document.getElementById('tickerSpan1'), s2 = document.getElementById('tickerSpan2');
   if(!s1 || !s2) return; // ticker is mid-edit (input swapped in) — skip until commit/cancel restores the spans
